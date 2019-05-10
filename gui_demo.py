@@ -7,12 +7,24 @@ user_tool = UserTool()
 
 """设置窗口"""
 root = Tk()
-root.wm_title('Phone Book Management')
+root.wm_title('通信录')
 
-def refresh():
+
+def refresh(query_type=None, keyword=""):
+    users = []
+    if query_type == "user_id":
+        user = user_tool.get_by_id(user_id=keyword)
+        if user:
+            users.append(user)
+    elif query_type == "name":
+        users.extend(user_tool.get_by_name(name=keyword))
+    else:
+        users = user_tool.get_all()
+
     tdv1.clear()
-    for user in user_tool.get_all():
+    for user in users:
         tdv1.insert('', 'end', values=user.to_tuple())
+
 
 def tdv_id_to_user_id(tdv_id):
     return tdv1.item(tdv_id)["values"][0]
@@ -103,14 +115,37 @@ class NewWindow(Toplevel):
 
 button_frame = ttk.Frame(root)
 
-bt_new = ttk.Button(button_frame, text="添加", command=lambda: NewWindow(root))
-bt_delete = ttk.Button(button_frame, text="删除")
-bt_modify = ttk.Button(button_frame, text="修改")
 
-bt_new.pack()
-bt_delete.pack()
-bt_modify.pack()
+def command_search_name():
+    name = entry_search_name.get()
+    refresh("name", name)
 
+
+def command_search_id():
+    user_id = entry_search_id.get()
+    refresh("user_id", user_id)
+
+
+btn_new = ttk.Button(button_frame, text="添加", command=lambda: NewWindow(root))
+
+btn_refresh = ttk.Button(button_frame, text="刷新", command=refresh)
+
+# 搜索部分
+label_search_name = ttk.Label(button_frame, text="按姓名找：")
+label_search_id = ttk.Label(button_frame, text="按编号找：")
+entry_search_name = ttk.Entry(button_frame)
+entry_search_id = ttk.Entry(button_frame)
+btn_search_name = ttk.Button(button_frame, text="搜索", command=command_search_name)
+btn_search_id = ttk.Button(button_frame, text="搜索", command=command_search_id)
+
+btn_refresh.grid(row=0, column=1)
+btn_new.grid(row=0, column=0)
+label_search_id.grid(row=1, column=0)
+label_search_name.grid(row=2, column=0)
+entry_search_id.grid(row=1, column=1)
+entry_search_name.grid(row=2, column=1)
+btn_search_id.grid(row=1, column=2)
+btn_search_name.grid(row=2, column=2)
 button_frame.pack()
 
 """创建表格"""
@@ -120,7 +155,7 @@ tdv1 = TreeDataView(root, tree_columns, scrollbar_x=True, scrollbar_y=True, righ
 refresh()
 
 # 绑定右键事件
-bt_new.bind("<Button-3>", pop_menu)
+btn_new.bind("<Button-3>", pop_menu)
 
 
 tdv1.pack(fill='both', expand=1)

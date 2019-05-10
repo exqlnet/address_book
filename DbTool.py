@@ -29,6 +29,7 @@ class UserTool:
 
     def add(self, **kwargs):
         self.users.append(User(user_id=self.increment, **kwargs))
+        self.increment += 1
         self.save()
 
     def get_all(self):
@@ -50,10 +51,7 @@ class UserTool:
         return res_users
 
     def delete(self, user_id):
-        print(user_id)
         for i in range(len(self.users)):
-            print(type(self.users[i].user_id), type(user_id))
-            print(str(self.users[i].user_id), str(user_id))
             if str(self.users[i].user_id) == str(user_id):
                 print("...")
                 self.users.pop(i)
