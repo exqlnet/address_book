@@ -29,7 +29,7 @@ class UserTool:
 
     def add(self, **kwargs):
         self.users.append(User(user_id=self.increment, **kwargs))
-        self.increment += 1
+        self.increment += str(int(self.increment) + 1)
         self.save()
 
     def get_all(self):
