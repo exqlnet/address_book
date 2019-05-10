@@ -29,7 +29,7 @@ class UserTool:
 
     def add(self, **kwargs):
         self.users.append(User(user_id=self.increment, **kwargs))
-        self.increment += str(int(self.increment) + 1)
+        self.increment = str(int(self.increment) + 1)
         self.save()
 
     def get_all(self):
@@ -53,21 +53,13 @@ class UserTool:
     def delete(self, user_id):
         for i in range(len(self.users)):
             if str(self.users[i].user_id) == str(user_id):
-                print("...")
                 self.users.pop(i)
                 break
         self.save()
 
     def batch_delete(self, *user_ids):
-        print(user_ids)
-        tmp_users = copy.deepcopy(self.users)
-        for user in self.users:
-            if user.user_id in user_ids:
-                tmp_users.remove(user)
-        self.users = tmp_users
+        self.users = list(filter(lambda u: int(u.user_id) not in user_ids, self.users))
         self.save()
-        # for user_id in user_ids:
-        #     self.delete(user_id)
 
     def save(self):
         with open("book.txt", "w+", encoding="utf-8") as file:
