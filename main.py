@@ -3,6 +3,11 @@ from tkinter import ttk
 from TreeDataView import TreeDataView
 from database import Student
 
+"""
+本模块定义了程序的界面
+定义了多个函数用于按钮点击事件
+定义了一些可复用的函数
+"""
 
 """设置窗口"""
 root = Tk()
@@ -10,17 +15,8 @@ root.wm_title('学生信息管理系统')
 root.geometry("1000x500+50+50")
 
 
-def refresh(query_type=None, keyword=""):
-    students = []
-    if query_type == "xh":
-        student = Student.find_student_by_xh(keyword)
-        if student:
-            students.append(student)
-    elif query_type == "xm":
-        students.extend(Student.find_student_by_xm(keyword))
-    else:
-        students = Student.get_all()
-
+def refresh():
+    students = Student.get_all()
     tdv1.clear()
     for student in students:
         tdv1.insert('', 'end', values=student.to_tuple())
@@ -58,7 +54,7 @@ def pop_menu(event):
 
 
 class NewWindow(Toplevel):
-
+    """弹出窗口类"""
     def __init__(self, parent, student_info=None):
         Toplevel.__init__(self, parent)
         self.geometry("300x250+50+50")

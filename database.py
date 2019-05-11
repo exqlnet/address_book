@@ -1,7 +1,10 @@
-import os
 import sqlite3
-
+"""
+本模块用于操作数据库
+使用sqlite数据库
+"""
 columns = ["xh", "xm", "xb", "csrq", "bjmc", "dh", "sfzh", "jtzz"]
+
 
 def to_students(sql, *args):
     """从数据库拿到用户信息"""

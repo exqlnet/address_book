@@ -1,3 +1,7 @@
+"""
+该模块代码来源于https://github.com/vsantiago113/TreeDataView
+因表格组件较为复杂，所以直接调用现有的实现
+"""
 try:
     # Python 2.7
     import Tkinter as tk
