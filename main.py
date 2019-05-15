@@ -62,11 +62,9 @@ class NewWindow(Toplevel):
 
         super().__init__(parent)
         self.parent = parent
-        print("create done1")
-        self.geometry("300x250+50+50")
+        self.geometry("300x250")
         self.student_info = student_info
         self.create_window()
-        print("create done2")
         self.parent.withdraw()
         self.mainloop()
 
@@ -122,14 +120,14 @@ class NewWindow(Toplevel):
         bt_submit.grid(row=9)
 
     def create_window(self):
-        self.bind("<Destroy>", self._destory)
+        self.bind("<Destroy>", self._destroy)
         if self.student_info:
             self.wm_title("修改学生信息")
         else:
             self.wm_title("添加学生")
         self.render_content(student_info=self.student_info)
 
-    def _destory(self, event):
+    def _destroy(self, event):
         self.parent.deiconify()
         self.parent.refresh()
         self.destroy()
@@ -145,7 +143,6 @@ class NewWindow(Toplevel):
         jtzz = self.entry_jtzz.get()
         Student(xh, xm, xb, csrq, bjmc, dh, sfzh, jtzz).save()
         self.destroy()
-
 
 
 class MainWindow(Toplevel):
@@ -180,11 +177,17 @@ class MainWindow(Toplevel):
         for student in students:
             self.tdv1.insert('', 'end', values=student.to_tuple())
 
+    def _destroy(self, event):
+        exit(0)
+
     def __init__(self, parent):
         """设置窗口"""
         print("init...")
         super().__init__(parent)
         print("parent init done...")
+        self.parent = parent
+        self.geometry("560x320")
+        self.bind("<Destroy>", self._destroy)
         button_frame = ttk.Frame(self)
         btn_new = ttk.Button(button_frame, text="添加", command=lambda: NewWindow(self))
         btn_refresh = ttk.Button(button_frame, text="刷新", command=self.refresh)
