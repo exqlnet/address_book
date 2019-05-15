@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk
 from TreeDataView import TreeDataView
 from database import Student
+import json
 
 """
 本模块定义了程序的界面
@@ -9,57 +10,65 @@ from database import Student
 定义了一些可复用的函数
 """
 
-"""设置窗口"""
-root = Tk()
-root.wm_title('学生信息管理系统')
-root.geometry("1000x500+50+50")
 
+class LoginWindow(Tk):
+    """登录窗口"""
 
-def refresh():
-    students = Student.get_all()
-    tdv1.clear()
-    for student in students:
-        tdv1.insert('', 'end', values=student.to_tuple())
+    def __init__(self):
+        Tk.__init__(self)
+        self.title("登录")
+        self.geometry("200x100")
+        label_admin = Label(self, text="管理员登录")
+        label_username = Label(self, text="用户名")
+        label_password = Label(self, text="密码")
+        self.label_feedback = Label(self, text="")
+        label_admin.grid(row=0, column=0)
+        label_username.grid(row=1, column=0)
+        label_password.grid(row=2, column=0)
+        self.label_feedback.grid(row=4, column=0)
+        self.entry_username = Entry(self, width="20")
+        self.entry_password = Entry(self, width="20")
+        bt_login = Button(self, text="登录", command=self.to_main)
+        self.entry_username.grid(row=1, column=1)
+        self.entry_password.grid(row=2, column=1)
+        bt_login.grid(row=3, column=0)
 
+    def check(self, username, password):
+        """用于检查管理员用户名密码是否正确"""
+        with open("admins.json", "r") as file:
+            admins = json.load(file)
+            for admin in admins:
+                if admin["username"] == username and admin["password"] == password:
+                    return True
+        return False
 
-def tdv_id_to_xh(tdv_id):
-    return str(tdv1.item(tdv_id)["values"][0])
-
-
-def delete_command():
-    tdv_ids = tdv1.selection()
-    xhs = [tdv_id_to_xh(_id) for _id in tdv_ids]
-    Student.batch_delete(*xhs)
-    tdv1.delete(*tdv_ids)
-
-
-def modify_command():
-    tdv_ids = tdv1.selection()
-    if len(tdv_ids) != 1:
-        return
-
-    student_info = Student.find_student_by_xh(tdv_id_to_xh(tdv_ids[0]))[0]
-    modify_window = NewWindow(root, student_info=student_info)
-
-
-"""创建菜单"""
-menu = Menu(root, tearoff=0)
-menu.add_command(label="删除", command=delete_command)
-menu.add_command(label="修改", command=modify_command)
-
-
-def pop_menu(event):
-    # print(selected_values)
-    menu.post(event.x_root, event.y_root)
+    def to_main(self):
+        print("to main called")
+        if self.check(self.entry_username.get(), self.entry_password.get()):
+            print("create new")
+            self.withdraw()
+            MainWindow(self)
+            # main_window.grab_set()
+            print("ok")
+        else:
+            msg = Message(self, text="用户名或密码错误")
+            msg.grid(row=3, column=1)
+            # self.label_feedback.config(text="用户名或密码错误")
 
 
 class NewWindow(Toplevel):
     """弹出窗口类"""
     def __init__(self, parent, student_info=None):
-        Toplevel.__init__(self, parent)
+
+        super().__init__(parent)
+        self.parent = parent
+        print("create done1")
         self.geometry("300x250+50+50")
         self.student_info = student_info
         self.create_window()
+        print("create done2")
+        self.parent.withdraw()
+        self.mainloop()
 
     def render_content(self, student_info=None):
         # 创建输入框
@@ -113,18 +122,17 @@ class NewWindow(Toplevel):
         bt_submit.grid(row=9)
 
     def create_window(self):
-        root.withdraw()
         self.bind("<Destroy>", self._destory)
         if self.student_info:
             self.wm_title("修改学生信息")
         else:
             self.wm_title("添加学生")
         self.render_content(student_info=self.student_info)
-        self.mainloop()
 
     def _destory(self, event):
+        self.parent.deiconify()
+        self.parent.refresh()
         self.destroy()
-        root.deiconify()
 
     def save_info(self):
         xh = self.entry_xh.get()
@@ -137,47 +145,95 @@ class NewWindow(Toplevel):
         jtzz = self.entry_jtzz.get()
         Student(xh, xm, xb, csrq, bjmc, dh, sfzh, jtzz).save()
         self.destroy()
-        root.deiconify()
-        refresh()
 
 
-button_frame = ttk.Frame(root)
+
+class MainWindow(Toplevel):
+
+    def refresh(self):
+        students = Student.get_all()
+        self.tdv1.clear()
+        for student in students:
+            self.tdv1.insert('', 'end', values=student.to_tuple())
+
+    def tdv_id_to_xh(self, tdv_id):
+        return str(self.tdv1.item(tdv_id)["values"][0])
+
+    def delete_command(self):
+        tdv_ids = self.tdv1.selection()
+        xhs = [self.tdv_id_to_xh(_id) for _id in tdv_ids]
+        Student.batch_delete(*xhs)
+        self.tdv1.delete(*tdv_ids)
+
+    def modify_command(self):
+        tdv_ids = self.tdv1.selection()
+        if len(tdv_ids) != 1:
+            return
+
+        student_info = Student.find_student_by_xh(self.tdv_id_to_xh(tdv_ids[0]))[0]
+        modify_window = NewWindow(self, student_info=student_info)
+
+    def search_callback(self):
+        keyword = self.input_search.get()
+        students = Student.query(keyword)
+        self.tdv1.clear()
+        for student in students:
+            self.tdv1.insert('', 'end', values=student.to_tuple())
+
+    def __init__(self, parent):
+        """设置窗口"""
+        print("init...")
+        super().__init__(parent)
+        print("parent init done...")
+        button_frame = ttk.Frame(self)
+        btn_new = ttk.Button(button_frame, text="添加", command=lambda: NewWindow(self))
+        btn_refresh = ttk.Button(button_frame, text="刷新", command=self.refresh)
+
+        print("create search...")
+        # 搜索部分
+        self.label_search = ttk.Label(button_frame, text="查找(输入关键字)：")
+        self.input_search = ttk.Entry(button_frame)
+        self.btn_search = ttk.Button(button_frame, text="搜索", command=self.search_callback)
+
+        print("render widget")
+        btn_new.grid(row=1, column=0)
+        btn_refresh.grid(row=1, column=1)
+        self.label_search.grid(row=2, column=0)
+        self.input_search.grid(row=2, column=1)
+        self.btn_search.grid(row=2, column=2)
+        button_frame.pack()
+
+        """创建表格"""
+        print("creating table")
+        # 初始化表格
+        tree_columns = ['学号', '姓名', '性别', '出生日期', '班级', '电话', '身份证号', '家庭住址']
+        self.tdv1 = TreeDataView(self, tree_columns, scrollbar_x=True, scrollbar_y=True, right_click=self.pop_menu)
+        self.refresh()
+
+        # 创建右键菜单
+        self.create_menu()
+
+        # 绑定右键事件
+        print("binding callback")
+        btn_new.bind("<Button-3>", self.pop_menu)
+        self.tdv1.pack(fill='both', expand=1)
+
+        self.mainloop()
+
+    def create_menu(self):
+        """创建菜单"""
+        self.menu = Menu(self, tearoff=0)
+        self.menu.add_command(label="删除", command=self.delete_command)
+        self.menu.add_command(label="修改", command=self.modify_command)
+
+    def pop_menu(self, event):
+        # print(selected_values)
+        self.menu.post(event.x_root, event.y_root)
 
 
-def search_callback():
-    keyword = input_search.get()
-    students = Student.query(keyword)
-    tdv1.clear()
-    for student in students:
-        tdv1.insert('', 'end', values=student.to_tuple())
+def start():
+    login_window = LoginWindow()
+    login_window.mainloop()
 
 
-btn_new = ttk.Button(button_frame, text="添加", command=lambda: NewWindow(root))
-btn_refresh = ttk.Button(button_frame, text="刷新", command=refresh)
-
-# 搜索部分
-label_search = ttk.Label(button_frame, text="查找(输入关键字)：")
-input_search = ttk.Entry(button_frame)
-btn_search = ttk.Button(button_frame, text="搜索", command=search_callback)
-
-btn_new.grid(row=1, column=0)
-btn_refresh.grid(row=1, column=1)
-label_search.grid(row=2, column=0)
-input_search.grid(row=2, column=1)
-btn_search.grid(row=2, column=2)
-button_frame.pack()
-
-"""创建表格"""
-# 初始化表格
-tree_columns = ['学号', '姓名', '性别', '出生日期', '班级', '电话', '身份证号', '家庭住址']
-tdv1 = TreeDataView(root, tree_columns, scrollbar_x=True, scrollbar_y=True, right_click=pop_menu)
-refresh()
-
-# 绑定右键事件
-btn_new.bind("<Button-3>", pop_menu)
-
-
-tdv1.pack(fill='both', expand=1)
-
-
-root.mainloop()
+start()
